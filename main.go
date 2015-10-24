@@ -29,8 +29,6 @@ func main() {
     if err := templates.ExecuteTemplate(w, "index.html", p); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
-
-    db.Close()
   })
 
   fmt.Println(http.ListenAndServe(":8080", nil))
