@@ -1,12 +1,48 @@
 <html>
   <head></head>
   <body>
-    <p>Hello, {{.Name}}</p>
+    <form onsubmit="return false;" id="search-form">
+      <input name="search" />
+      <input type="submit" value="Search" onclick="submitSearch()" />
+    </form>
 
-    {{if .DBStatus}}
-      <p>The database connection is alive!</p>
-    {{else}}
-      <p>The database connection is dead!</p>
-    {{end}}
+    <br />
+    <br />
+
+    <table width="100%">
+      <thead>
+        <tr>
+          <th width="40%">Title</th>
+          <th width="30%">Author</th>
+          <th width="10%">Year</th>
+          <th width="20%">ID</th>
+        </tr>
+      </thead>
+      <tbody id="search-results">
+      </tbody>
+    </table>
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript">
+      function submitSearch() {
+        $.ajax({
+          url: "/search",
+          method: "POST",
+          data: $("#search-form").serialize(),
+          success: function(results) {
+            var parsed = JSON.parse(results);
+            var searchResults = $("#search-results");
+            searchResults.empty();
+
+            for (var i = 0; i < parsed.length; ++i) {
+              var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year + "</td><td>" + result.ID + "</td></tr>");
+              searchResults.append(row);
+            }
+          }
+        });
+        return false;
+      };
+
+    </script>
   </body>
 </html>
