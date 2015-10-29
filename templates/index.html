@@ -11,7 +11,7 @@
 
     <table width="100%">
       <thead>
-        <tr>
+        <tr style="text-align: left;">
           <th width="40%">Title</th>
           <th width="30%">Author</th>
           <th width="10%">Year</th>
@@ -35,6 +35,7 @@
             searchResults.empty();
 
             for (var i = 0; i < parsed.length; ++i) {
+              var result = parsed[i];
               var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year + "</td><td>" + result.ID + "</td></tr>");
               searchResults.append(row);
             }
@@ -42,7 +43,6 @@
         });
         return false;
       };
-
     </script>
   </body>
 </html>

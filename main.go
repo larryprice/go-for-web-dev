@@ -7,6 +7,9 @@ import (
   _ "github.com/mattn/go-sqlite3"
   "database/sql"
   "encoding/json"
+  "net/url"
+  "encoding/xml"
+  "io/ioutil"
 )
 
 type Page struct {
@@ -15,10 +18,10 @@ type Page struct {
 }
 
 type SearchResult struct {
-  Title string
-  Author string
-  Year string
-  ID string
+  Title string `xml:"title,attr"`
+  Author string `xml:"author,attr"`
+  Year string `xml:"hyr,attr"`
+  ID string `xml:"owi,attr"`
 }
 
 func main() {
@@ -40,10 +43,11 @@ func main() {
   })
 
   http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
-    results := []SearchResult{
-      SearchResult{"Moby-Dick", "Herman Melville", "1851", "222222"},
-      SearchResult{"The Adventures of Huckleberry Finn", "Mark Twain", "1884", "444444"},
-      SearchResult{"The Catcher in the Rye", "JD Salinger", "1951", "333333"},
+    var results []SearchResult
+    var err error
+    
+    if results, err = search(r.FormValue("search")); err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
     }
 
     encoder := json.NewEncoder(w)
@@ -52,5 +56,33 @@ func main() {
     }
   })
 
+
   fmt.Println(http.ListenAndServe(":8080", nil))
+}
+
+type ClassifyResponse struct {
+  Results []SearchResult `xml:"works>work"`
+}
+
+func search(query string) ([]SearchResult, error) {
+  var resp *http.Response
+  var err error
+  var c ClassifyResponse
+
+  if resp, err = http.Get("http://classify.oclc.org/classify2/Classify?title=" + url.QueryEscape(query) + "&summary=true"); err != nil {
+    return c.Results, err
+  }
+
+  defer resp.Body.Close()
+
+  var body []byte
+  if body, err = ioutil.ReadAll(resp.Body); err != nil {
+    return c.Results, err
+  }
+
+  if err = xml.Unmarshal(body, &c); err != nil {
+    return c.Results, err
+  }
+
+  return c.Results, nil
 }
