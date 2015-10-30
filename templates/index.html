@@ -1,5 +1,12 @@
 <html>
-  <head></head>
+  <head>
+    <style>
+      #search-results tr:hover {
+        background-color: lightgrey;
+        cursor: pointer;
+      }
+    </style>
+  </head>
   <body>
     <form onsubmit="return false;" id="search-form">
       <input name="search" />
@@ -31,18 +38,30 @@
           data: $("#search-form").serialize(),
           success: function(results) {
             var parsed = JSON.parse(results);
+            if (!parsed) return;
+
             var searchResults = $("#search-results");
             searchResults.empty();
 
             for (var i = 0; i < parsed.length; ++i) {
               var result = parsed[i];
               var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year + "</td><td>" + result.ID + "</td></tr>");
+              setupSearchSelect(row, result.ID);
               searchResults.append(row);
             }
           }
         });
         return false;
-      };
+      }
+
+      function setupSearchSelect(row, id) {
+        row.on("click", function() {
+          $.ajax({
+            url: "/books/add?id=" + id,
+            method: "GET"
+          });
+        });
+      }
     </script>
   </body>
 </html>

@@ -45,7 +45,7 @@ func main() {
   http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
     var results []SearchResult
     var err error
-    
+
     if results, err = search(r.FormValue("search")); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
@@ -56,33 +56,77 @@ func main() {
     }
   })
 
+  http.HandleFunc("/books/add", func(w http.ResponseWriter, r *http.Request) {
+    var book BookResponse
+    var err error
+
+    if book, err = fetch(r.FormValue("id")); err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
+    fmt.Println(book)
+
+    if err = db.Ping(); err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
+
+    _, err = db.Exec("insert into books  (pk, title, author, id, classification) values (?, ?, ?, ?, ?)",
+            nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
+
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
+  })
 
   fmt.Println(http.ListenAndServe(":8080", nil))
 }
 
-type ClassifyResponse struct {
+type BookResponse struct {
+  BookData struct {
+    Title string `xml:"title,attr"`
+    Author string `xml:"author,attr"`
+    ID string `xml:"owi,attr"`
+  } `xml:"work"`
+  Classification struct {
+    MostPopular string `xml:"sfa,attr"`
+  } `xml:"recommendations>ddc>mostPopular"`
+}
+
+func fetch(id string) (BookResponse, error) {
+  var b BookResponse
+  body, err := queryClassifyAPI("http://classify.oclc.org/classify2/Classify?owi=" + url.QueryEscape(id) + "&summary=true")
+  if err != nil {
+    return b, err
+  }
+  err = xml.Unmarshal(body, &b)
+  return b, err
+}
+
+type SearchResponse struct {
   Results []SearchResult `xml:"works>work"`
 }
 
 func search(query string) ([]SearchResult, error) {
+  var s SearchResponse
+  body, err := queryClassifyAPI("http://classify.oclc.org/classify2/Classify?title=" + url.QueryEscape(query) + "&summary=true")
+  if err != nil {
+    return s.Results, nil
+  }
+  err = xml.Unmarshal(body, &s)
+  return s.Results, nil
+}
+
+func queryClassifyAPI(url string) ([]byte, error) {
   var resp *http.Response
   var err error
-  var c ClassifyResponse
 
-  if resp, err = http.Get("http://classify.oclc.org/classify2/Classify?title=" + url.QueryEscape(query) + "&summary=true"); err != nil {
-    return c.Results, err
+  if resp, err = http.Get(url); err != nil {
+    return []byte{}, err
   }
 
   defer resp.Body.Close()
 
   var body []byte
-  if body, err = ioutil.ReadAll(resp.Body); err != nil {
-    return c.Results, err
-  }
+  body, err = ioutil.ReadAll(resp.Body);
 
-  if err = xml.Unmarshal(body, &c); err != nil {
-    return c.Results, err
-  }
-
-  return c.Results, nil
+  return body, err
 }
