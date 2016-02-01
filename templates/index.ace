@@ -3,7 +3,8 @@ html
   head
     = css
       #search-results tr:hover,
-      #view-results tr:hover {
+      #view-results tr:hover,
+      #view-page th:hover {
         background-color: lightgrey;
         cursor: pointer;
       }
@@ -49,9 +50,9 @@ html
       table width="100%"
         thead
           tr style="text-align: left;"
-            th width="45%" Title
-            th width="35%" Author
-            th width="15%" Classification
+            th width="45%" onclick="sortBooks('title')" Title
+            th width="35%" onclick="sortBooks('author')" Author
+            th width="15%" onclick="sortBooks('classification')" Classification
             th width="5%"
         tbody#view-results
           {{range .Books}}
@@ -65,6 +66,23 @@ html
 
     script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"
     = javascript
+      function sortBooks(columnName) {
+        $.ajax({
+          method: "GET",
+          url: "/books?sortBy=" + columnName,
+          success: function (result) {
+            var books = JSON.parse(result);
+            if (!books) return;
+
+            $("#view-results").empty();
+
+            books.forEach(function(book) {
+              appendBook(book)
+            });
+          }
+        })
+      }
+
       function deleteBook(pk) {
         $.ajax({
           method: "DELETE",
@@ -82,6 +100,10 @@ html
       function showSearchPage() {
         $("#search-page").show()
         $("#view-page").hide()
+      }
+
+      function appendBook(book) {
+        $("#view-results").append("<tr id='book-row-" + book.PK + "'><td>" + book.Title + "</td><td>" + book.Author + "</td><td>" + book.Classification + "</td><td><button class='delete-btn' onclick='deleteBook(" + book.PK + ")'>Delete</button></td></tr>");
       }
 
       function submitSearch() {
@@ -106,7 +128,7 @@ html
                   success: function(data) {
                     var book = JSON.parse(data);
                     if (!book) return;
-                    $("#view-results").append("<tr id='book-row-" + book.PK + "'><td>" + book.Title + "</td><td>" + book.Author + "</td><td>" + book.Classification + "</td><td><button class='delete-btn' onclick='deleteBook(" + book.PK + ")'>Delete</button></td></tr>");
+                    appendBook(book);
                   }
                 })
               })
