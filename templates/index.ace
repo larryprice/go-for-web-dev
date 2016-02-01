@@ -27,7 +27,14 @@ html
         border-color: #d43f3a;
         border-radius: 8px;
       }
+      #user-info {
+        text-align: right;
+      }
   body
+    #user-info
+      div You are currently logged in as <b>{{.User}}</b>
+      a href="/logout" (Log out)
+
     div#page-switcher
       button#view-library onclick="showViewPage()" View Library
       button#add-books onclick="showSearchPage()" Add Books
