@@ -3,12 +3,15 @@ package main
 import (
   "net/http"
   "html/template"
-  _ "github.com/mattn/go-sqlite3"
+
   "database/sql"
+  _ "github.com/mattn/go-sqlite3"
+
   "encoding/json"
   "net/url"
-  "encoding/xml"
   "io/ioutil"
+  "encoding/xml"
+
   "github.com/codegangsta/negroni"
 )
 
@@ -26,6 +29,14 @@ type SearchResult struct {
 
 var db *sql.DB
 
+func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+  if err := db.Ping(); err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  next(w, r)
+}
+
 func main() {
   templates := template.Must(template.ParseFiles("templates/index.html"))
 
@@ -34,11 +45,10 @@ func main() {
   mux := http.NewServeMux()
 
   mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-    p := Page{Name: "Gopher", DBStatus: false}
+    p := Page{Name: "Gopher"}
     if name := r.FormValue("name"); name != "" {
       p.Name = name
     }
-
     p.DBStatus = db.Ping() == nil
 
     if err := templates.ExecuteTemplate(w, "index.html", p); err != nil {
@@ -60,16 +70,16 @@ func main() {
     }
   })
 
-  mux.HandleFunc("/books/add", func(w http.ResponseWriter, r *http.Request) {
-    var book BookResponse
+  mux.HandleFunc("/books/add", func (w http.ResponseWriter, r *http.Request) {
+    var book ClassifyBookResponse
     var err error
 
-    if book, err = fetch(r.FormValue("id")); err != nil {
+    if book, err = find(r.FormValue("id")); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
 
-    _, err = db.Exec("insert into books  (pk, title, author, id, classification) values (?, ?, ?, ?, ?)",
-            nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
+    _, err = db.Exec("insert into books (pk, title, author, id, classification) values (?, ?, ?, ?, ?)",
+                      nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
 
     if err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -79,19 +89,14 @@ func main() {
   n := negroni.Classic()
   n.Use(negroni.HandlerFunc(verifyDatabase))
   n.UseHandler(mux)
-
   n.Run(":8080")
 }
 
-func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-  if err := db.Ping(); err != nil {
-    http.Error(w, err.Error(), http.StatusInternalServerError)
-    return
-  }
-  next(w, r)
+type ClassifySearchResponse struct {
+  Results []SearchResult `xml:"works>work"`
 }
 
-type BookResponse struct {
+type ClassifyBookResponse struct {
   BookData struct {
     Title string `xml:"title,attr"`
     Author string `xml:"author,attr"`
@@ -102,31 +107,31 @@ type BookResponse struct {
   } `xml:"recommendations>ddc>mostPopular"`
 }
 
-func fetch(id string) (BookResponse, error) {
-  var b BookResponse
-  body, err := queryClassifyAPI("http://classify.oclc.org/classify2/Classify?owi=" + url.QueryEscape(id) + "&summary=true")
-  if err != nil {
-    return b, err
-  }
-  err = xml.Unmarshal(body, &b)
-  return b, err
-}
+func find(id string) (ClassifyBookResponse, error) {
+  var c ClassifyBookResponse
+  body, err := classifyAPI("http://classify.oclc.org/classify2/Classify?summary=true&owi=" + url.QueryEscape(id))
 
-type SearchResponse struct {
-  Results []SearchResult `xml:"works>work"`
+  if err != nil {
+    return ClassifyBookResponse{}, err
+  }
+
+  err = xml.Unmarshal(body, &c)
+  return c, err
 }
 
 func search(query string) ([]SearchResult, error) {
-  var s SearchResponse
-  body, err := queryClassifyAPI("http://classify.oclc.org/classify2/Classify?title=" + url.QueryEscape(query) + "&summary=true")
+  var c ClassifySearchResponse
+  body, err := classifyAPI("http://classify.oclc.org/classify2/Classify?summary=true&title=" + url.QueryEscape(query))
+
   if err != nil {
-    return s.Results, nil
+    return []SearchResult{}, err
   }
-  err = xml.Unmarshal(body, &s)
-  return s.Results, nil
+
+  err = xml.Unmarshal(body, &c)
+  return c.Results, err
 }
 
-func queryClassifyAPI(url string) ([]byte, error) {
+func classifyAPI(url string) ([]byte, error) {
   var resp *http.Response
   var err error
 
@@ -136,8 +141,5 @@ func queryClassifyAPI(url string) ([]byte, error) {
 
   defer resp.Body.Close()
 
-  var body []byte
-  body, err = ioutil.ReadAll(resp.Body);
-
-  return body, err
+  return ioutil.ReadAll(resp.Body)
 }
