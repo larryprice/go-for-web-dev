@@ -52,6 +52,7 @@ func main() {
     template, err := ace.Load("templates/index", "", nil)
     if err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
     }
 
     p := Page{Books: []Book{}}
@@ -73,6 +74,7 @@ func main() {
 
     if results, err = search(r.FormValue("search")); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
     }
 
     encoder := json.NewEncoder(w)
@@ -87,6 +89,7 @@ func main() {
 
     if book, err = find(r.FormValue("id")); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
     }
 
     result, err := db.Exec("insert into books (pk, title, author, id, classification) values (?, ?, ?, ?, ?)",
@@ -94,6 +97,7 @@ func main() {
 
     if err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
     }
 
     pk, _ := result.LastInsertId()
@@ -106,6 +110,14 @@ func main() {
     if err := json.NewEncoder(w).Encode(b); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
+  })
+
+  mux.HandleFunc("/books/delete", func (w http.ResponseWriter, r *http.Request) {
+    if _, err := db.Exec("delete from books where pk = ?", r.FormValue("pk")); err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    w.WriteHeader(http.StatusOK)
   })
 
   n := negroni.Classic()
