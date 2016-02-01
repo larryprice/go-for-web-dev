@@ -1,0 +1,27 @@
+= doctype html
+html
+  head
+    = css
+      #login-form div{
+        text-align: center;
+      }
+      #login-form input {
+        margin: .5em 1em;
+      }
+      #error {
+        text-align: center;
+        color: red;
+        margin-top: 1em;
+      }
+  body
+    form#login-form
+      div
+        label Username
+        input type="email" name="username" required=
+      div
+        label Password
+        input type="password" name="password" required=
+      div
+        input type="submit" value="Register" name="register"
+        input type="submit" value="Log In" name="login"
+    #error {{.Error}}
