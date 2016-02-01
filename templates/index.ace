@@ -6,22 +6,64 @@ html
         background-color: lightgrey;
         cursor: pointer;
       }
+      #page-switcher {
+        width: 100%;
+        text-align: center;
+      }
+      #page-switcher button {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 1em;
+        padding: .3em;
+      }
+      #search-page {
+        display: none;
+      }
   body
-    form id="search-form" onsubmit="return false"
-      input name="search"
-      input type="submit" value="Search" onclick="submitSearch()"
+    div#page-switcher
+      button#view-library onclick="showViewPage()" View Library
+      button#add-books onclick="showSearchPage()" Add Books
 
-    table width="100%"
-      thead
-        tr style="text-align: left;"
-          th width="40%" Title
-          th width="30%" Author
-          th width="10%" Year
-          th width="20%" ID
-      tbody id="search-results"
+    div#search-page
+      form id="search-form" onsubmit="return false"
+        input name="search"
+        input type="submit" value="Search" onclick="submitSearch()"
+
+      table width="100%"
+        thead
+          tr style="text-align: left;"
+            th width="40%" Title
+            th width="30%" Author
+            th width="10%" Year
+            th width="20%" ID
+        tbody id="search-results"
+
+    div#view-page
+      table width="100%"
+        thead
+          tr style="text-align: left;"
+            th width="45%" Title
+            th width="35%" Author
+            th width="20%" Classification
+        tbody#view-results
+          {{range .Books}}
+            tr
+              td {{.Title}}
+              td {{.Author}}
+              td {{.Classification}}
+          {{end}}
 
     script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"
     = javascript
+      function showViewPage() {
+        $("#search-page").hide()
+        $("#view-page").show()
+      }
+      function showSearchPage() {
+        $("#search-page").show()
+        $("#view-page").hide()
+      }
+
       function submitSearch() {
         $.ajax({
           url: "/search",
@@ -40,7 +82,12 @@ html
               row.on("click", function() {
                 $.ajax({
                   url: "/books/add?id=" + result.ID,
-                  method: "GET"
+                  method: "GET",
+                  success: function(data) {
+                    var book = JSON.parse(data);
+                    if (!book) return;
+                    $("#view-results").append("<tr><td>" + book.Title + "</td><td>" + book.Author + "</td><td>" + book.Classification + "</td></tr>");
+                  }
                 })
               })
             });
