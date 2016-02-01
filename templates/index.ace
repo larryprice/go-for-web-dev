@@ -47,6 +47,12 @@ html
         tbody id="search-results"
 
     div#view-page
+      form#filter-view-results style="float: right;"
+        select name="filter" style="font-size: 18px; min-width: 10em;" onchange="filterViewResults()"
+          option value="all" All Books
+          option value="fiction" Fiction
+          option value="nonfiction" Nonfiction
+
       table width="100%"
         thead
           tr style="text-align: left;"
@@ -66,21 +72,36 @@ html
 
     script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"
     = javascript
+      $(document).ready(function() {
+        $("#filter-view-results option[value='" + {{.Filter}} + "']").prop("selected", true);
+      })
+
+      function filterViewResults() {
+        $.ajax({
+          method: "GET",
+          url: "/books",
+          data: $("#filter-view-results").serialize(),
+          success: rebuildBookCollection
+        })
+      }
+
       function sortBooks(columnName) {
         $.ajax({
           method: "GET",
           url: "/books?sortBy=" + columnName,
-          success: function (result) {
-            var books = JSON.parse(result);
-            if (!books) return;
-
-            $("#view-results").empty();
-
-            books.forEach(function(book) {
-              appendBook(book)
-            });
-          }
+          success: rebuildBookCollection
         })
+      }
+
+      function rebuildBookCollection(result) {
+        var books = JSON.parse(result);
+        if (!books) return;
+
+        $("#view-results").empty();
+
+        books.forEach(function(book) {
+          appendBook(book)
+        });
       }
 
       function deleteBook(pk) {
