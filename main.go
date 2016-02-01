@@ -27,6 +27,7 @@ type Book struct {
   Author string `db:"author"`
   Classification string `db:"classification"`
   ID string `db:"id"`
+  User string `db:"user"`
 }
 
 type User struct {
@@ -68,17 +69,17 @@ func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFun
   next(w, r)
 }
 
-func getBookCollection(books *[]Book, sortCol string, filterByClass string, w http.ResponseWriter) bool {
+func getBookCollection(books *[]Book, sortCol, filterByClass, username string, w http.ResponseWriter) bool {
   if sortCol == "" {
     sortCol = "pk"
   }
-  var where string
+  where := " where user=?"
   if filterByClass == "fiction" {
-    where = " where classification between '800' and '900'"
+    where += " and classification between '800' and '900'"
   } else if filterByClass == "nonfiction" {
-    where = " where classification not between '800' and '900'"
+    where += " and classification not between '800' and '900'"
   }
-  if _, err := dbmap.Select(books, "select * from books" + where + " order by " + sortCol); err != nil {
+  if _, err := dbmap.Select(books, "select * from books" + where + " order by " + sortCol, username); err != nil {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return false
   }
@@ -168,7 +169,8 @@ func main() {
 
   mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request) {
     var b []Book
-    if !getBookCollection(&b, getStringFromSession(r, "SortBy"), r.FormValue("filter"), w) {
+    if !getBookCollection(&b, getStringFromSession(r, "SortBy"), r.FormValue("filter"),
+        getStringFromSession(r, "User"), w) {
       return
     }
 
@@ -182,7 +184,8 @@ func main() {
 
   mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request) {
     var b []Book
-    if !getBookCollection(&b, r.FormValue("sortBy"), getStringFromSession(r, "Filter"), w) {
+    if !getBookCollection(&b, r.FormValue("sortBy"), getStringFromSession(r, "Filter"),
+        getStringFromSession(r, "User"), w) {
       return
     }
 
@@ -202,7 +205,8 @@ func main() {
     }
 
     p := Page{Books: []Book{}, Filter: getStringFromSession(r, "Filter"), User: getStringFromSession(r, "User")}
-    if !getBookCollection(&p.Books, getStringFromSession(r, "SortBy"), getStringFromSession(r, "Filter"), w) {
+    if !getBookCollection(&p.Books, getStringFromSession(r, "SortBy"),
+        getStringFromSession(r, "Filter"), p.User, w) {
       return
     }
 
@@ -240,6 +244,8 @@ func main() {
       Title: book.BookData.Title,
       Author: book.BookData.Author,
       Classification: book.Classification.MostPopular,
+      ID: r.FormValue("id"),
+      User: getStringFromSession(r, "User"),
     }
     if err = dbmap.Insert(&b); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -253,7 +259,12 @@ func main() {
 
   mux.HandleFunc("/books/{pk}", func (w http.ResponseWriter, r *http.Request) {
     pk, _ := strconv.ParseInt(gmux.Vars(r)["pk"], 10, 64)
-    if _, err := dbmap.Delete(&Book{pk, "", "", "", ""}); err != nil {
+    var b Book
+    if err := dbmap.SelectOne(&b, "select * from books where pk=? and user=?",
+        pk, getStringFromSession(r, "User")); err != nil {
+      http.Error(w, err.Error(), http.StatusBadRequest)
+    }
+    if _, err := dbmap.Delete(&b); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
       return
     }
