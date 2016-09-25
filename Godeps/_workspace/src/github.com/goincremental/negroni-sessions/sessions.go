@@ -4,7 +4,7 @@
 //	package main
 //
 //	import (
-//		"github.com/codegangsta/negroni"
+//		"github.com/urfave/negroni"
 //		"github.com/goincremental/negroni-sessions"
 //		"net/http"
 //	)
@@ -27,9 +27,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/codegangsta/negroni"
-	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/gorilla/context"
-	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/gorilla/sessions"
+	"github.com/gorilla/context"
+	"github.com/gorilla/sessions"
+	"github.com/urfave/negroni"
 )
 
 type contextKey int

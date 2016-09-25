@@ -16,7 +16,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/codegangsta/negroni"
+	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/urfave/negroni"
 	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/goincremental/negroni-sessions"
 	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/goincremental/negroni-sessions/cookiestore"
 	gmux "github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/gorilla/mux"

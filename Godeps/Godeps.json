@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/larryprice/go-for-web-dev",
 	"GoVersion": "go1.5",
+	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
 	],
@@ -12,7 +13,7 @@
 		},
 		{
 			"ImportPath": "github.com/goincremental/negroni-sessions",
-			"Rev": "b07e2d18b97e3f627edaa67876c21fa23eba6a08"
+			"Rev": "bce4c2d0379d56d4afb4bc4a1bc128b8a0193d7a"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -57,6 +58,11 @@
 			"ImportPath": "gopkg.in/gorp.v1",
 			"Comment": "v1.7.1",
 			"Rev": "c87af80f3cc5036b55b83d77171e156791085e2e"
+		},
+		{
+			"ImportPath": "github.com/urfave/negroni",
+			"Comment": "v0.2.0-65-g3f7ce7b",
+			"Rev": "3f7ce7b928e14ff890b067e5bbbc80af73690a9c"
 		}
 	]
 }

@@ -3,7 +3,7 @@ package sessions
 import (
 	"net/http"
 
-	"github.com/larryprice/go-for-web-dev/Godeps/_workspace/src/github.com/gorilla/sessions"
+	"github.com/gorilla/sessions"
 )
 
 //TokenGetSetter allows you to save and retrieve a value stored in a cookie
