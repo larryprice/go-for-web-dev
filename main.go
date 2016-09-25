@@ -9,7 +9,7 @@ import (
   "net/url"
   "encoding/xml"
   "io/ioutil"
-  "github.com/codegangsta/negroni"
+  "github.com/urfave/negroni"
 )
 
 type Page struct {
