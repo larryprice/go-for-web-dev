@@ -11,7 +11,7 @@ import (
   "io/ioutil"
   "encoding/xml"
 
-  "github.com/codegangsta/negroni"
+  "github.com/urfave/negroni"
   "github.com/yosssi/ace"
   gmux "github.com/gorilla/mux"
 )
