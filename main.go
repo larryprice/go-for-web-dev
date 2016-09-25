@@ -14,7 +14,7 @@ import (
   "strconv"
   "golang.org/x/crypto/bcrypt"
 
-  "github.com/codegangsta/negroni"
+  "github.com/urfave/negroni"
   "github.com/goincremental/negroni-sessions"
   "github.com/goincremental/negroni-sessions/cookiestore"
   "github.com/yosssi/ace"
